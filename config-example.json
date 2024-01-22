@@ -1,0 +1,9 @@
+{
+"ssid": "YOUR_SSID",
+"psk": "SSID_PASSWORD",
+"mqtt": "MQTT_SERVER_IP_OR_NAME",
+"mqttuser": "MQTT_USER",
+"mqttpass": "MQTT_PASSWORD",
+"mqttport": MQTT_PORT
+}
+
