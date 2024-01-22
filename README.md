@@ -20,6 +20,6 @@ This project was done with my son Netanel.
 * Reboot the wemos and check your mqtt.
 
 # Credits
-* Sht30 code is based on Roberto Sánchez work from https://github.com/rsc1975/micropython-sht30
-* Mqtt code is from https://github.com/micropython/micropython-lib
+* Sht30 code is based on Roberto Sánchez work from https://github.com/rsc1975/micropython-sht30 (Apache License 2.0)
+* Mqtt code is from https://github.com/micropython/micropython-lib (MIT License)
 
