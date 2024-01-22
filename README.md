@@ -18,3 +18,8 @@ This project was done with my son Netanel.
     * ampy --port=/dev/ttyUSB0 put lib
     * ampy --port=/dev/ttyUSB0 put config.json
 * Reboot the wemos and check your mqtt.
+
+# Credits
+* Sht30 code is based on Roberto Sánchez work from https://github.com/rsc1975/micropython-sht30
+* Mqtt code is from https://github.com/micropython/micropython-lib
+
