@@ -24,6 +24,8 @@ def senddata(name, unit, value):
  
 def timer_callback(timer):
     try:
+        # reconnect to network
+        wifi()
 	    # Temp and Humidity
         sensor = SHT30()
         temperature, humidity = sensor.measure()
@@ -36,14 +38,15 @@ def timer_callback(timer):
         senddata("Battery", "%", "100")
     except:
         print("Error.. reconnecting.. ")
-        # reconnect to network
-        wifi()	
         sensor.reset()
 
 def wifi():
     import network
     sta_if = network.WLAN(network.STA_IF)
     ap_if = network.WLAN(network.AP_IF)
+    if sta_if.isconnected():
+        print("Already connected")
+        return
     sta_if.active(False)
     time.sleep(5)
     sta_if.active(True)
