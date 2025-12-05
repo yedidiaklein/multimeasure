@@ -15,17 +15,23 @@ def senddata(name, unit, value):
                "stat_t": "multimeasure/" + mac + "/" + name,
                "dev": { "name": "multimeasure" + mac, "mdl": "Multimeasure", "sw": "0.9", "mf": "Yedidia", "ids": ["123"]}}
     json = ujson.dumps(config)
-    mqtt.connect()
-    topic = "homeassistant/sensor/multimeasure" + mac + "/" + name + "/config"
-    mqtt.publish(topic, json)
-    topic = "multimeasure/" + mac + "/" + name
-    mqtt.publish(topic, value)
-    mqtt.disconnect()
+    try:
+        mqtt.connect()
+        topic = "homeassistant/sensor/multimeasure" + mac + "/" + name + "/config"
+        mqtt.publish(topic, json)
+        topic = "multimeasure/" + mac + "/" + name
+        mqtt.publish(topic, value)
+    finally:
+        try:
+            mqtt.disconnect()
+        except:
+            pass
  
 def timer_callback(timer):
+    global rssi
     try:
-        # reconnect to network
-        wifi()
+        # reconnect to network if needed
+        mac_addr, rssi = wifi()
 	    # Temp and Humidity
         sensor = SHT30()
         temperature, humidity = sensor.measure()
@@ -36,28 +42,52 @@ def timer_callback(timer):
         senddata("Illuminance", "lux", str(light))
         senddata("Signal_strength", "dBm", str(rssi))
         senddata("Battery", "%", "100")
-    except:
-        print("Error.. reconnecting.. ")
-        sensor.reset()
+    except Exception as e:
+        print("Error in timer_callback:", str(e))
+        try:
+            sensor.reset()
+        except:
+            print("Failed to reset sensor")
+        try:
+            mqtt.disconnect()
+        except:
+            pass
 
 def wifi():
     import network
     sta_if = network.WLAN(network.STA_IF)
     ap_if = network.WLAN(network.AP_IF)
+    
+    # Get MAC address (always available)
+    mac = ubinascii.hexlify(sta_if.config('mac')).decode()
+    
+    # Check if already connected
     if sta_if.isconnected():
         print("Already connected")
-        return
+        rssi = sta_if.status('rssi')
+        return mac, rssi
+    
+    # Need to reconnect
+    print("Connecting to WiFi...")
     sta_if.active(False)
-    time.sleep(5)
+    time.sleep(2)
     sta_if.active(True)
     with open('config.json') as json_file:
         data = ujson.load(json_file)
         sta_if.connect(data['ssid'], data['psk'])
-    time.sleep(20)
+    
+    # Wait for connection with timeout
+    timeout = 30
+    while not sta_if.isconnected() and timeout > 0:
+        time.sleep(1)
+        timeout -= 1
+        
+    if not sta_if.isconnected():
+        print("Failed to connect to WiFi")
+        raise Exception("WiFi connection timeout")
+        
     print("My IP is:")
     print(sta_if.ifconfig())
-    # Get the MAC address of the ESP8266
-    mac = ubinascii.hexlify(sta_if.config('mac')).decode()
     rssi = sta_if.status('rssi')
     return mac, rssi
 
