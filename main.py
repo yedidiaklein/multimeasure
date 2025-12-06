@@ -1,10 +1,18 @@
-from machine import Pin, SoftI2C, ADC, Timer, WDT
+from machine import Pin, SoftI2C, ADC, Timer
 from sht30 import SHT30 
 import time
 import ubinascii
 from umqtt.simple import MQTTClient
 import ujson
 import gc
+
+# Try to import WDT if available
+try:
+    from machine import WDT
+    HAS_WDT = True
+except ImportError:
+    HAS_WDT = False
+    print("WDT not available on this build")
 
 ## functions
 def senddata(name, unit, value):
@@ -39,8 +47,9 @@ def senddata(name, unit, value):
 def timer_callback(timer):
     global rssi, sensor, error_count, wdt
     
-    # Feed the watchdog to prevent reset
-    wdt.feed()
+    # Feed the watchdog to prevent reset (if available)
+    if HAS_WDT and wdt:
+        wdt.feed()
     
     # Collect garbage before starting
     gc.collect()
@@ -136,9 +145,16 @@ def wifi():
 # Initialize error counter
 error_count = 0
 
-# Initialize watchdog timer (timeout in milliseconds)
+# Initialize watchdog timer if available (timeout in milliseconds)
 # Will reset the device if not fed within 120 seconds
-wdt = WDT(timeout=120000)
+wdt = None
+if HAS_WDT:
+    try:
+        wdt = WDT(timeout=120000)
+        print("Watchdog timer enabled")
+    except Exception as e:
+        print("Failed to enable watchdog:", str(e))
+        wdt = None
 
 mac, rssi = wifi()
 
